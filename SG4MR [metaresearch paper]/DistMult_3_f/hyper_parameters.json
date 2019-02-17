@@ -1,0 +1,14 @@
+training_set_path: data/train.tsv 
+execution_mode: Training_mode 
+kg_embedding_model_name: DistMult 
+embedding_dim: 200 
+margin_loss: 5.0 
+learning_rate: 0.03 
+batch_size: 32 
+num_epochs: 1500 
+test_set_path: data/test.tsv 
+filter_negative_triples: True 
+preferred_device: gpu 
+output_direc: keenNew/ 
+num_entities: 12609 
+num_relations: 4 
