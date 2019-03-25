@@ -5,6 +5,8 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ExtractPapers {
 	static class Source {
@@ -70,6 +72,31 @@ public class ExtractPapers {
 		return paperIDs;
 	}
 	
+	private static ArrayList<String> getAuthorNames(ArrayList<String> contributions, ArrayList<Source> files) {
+		ArrayList<String> names = new ArrayList<>();
+		for(Source source : files) {
+			String path = "data/SciGraph-Data/scigraph" + source.sourceyear + ".nt"; 
+			try(BufferedReader br = new BufferedReader(new FileReader(path))) {
+				String line;
+				while((line = br.readLine()) != null) {
+					int pos = line.indexOf("/things/contributions/");
+					if(pos != -1) {
+						line = line.substring(pos);
+						String cID = line.substring(pos + 22, line.indexOf(">"));
+						if(contributions.contains(cID)) {
+							int idx = line.indexOf("core/publishedName>");
+							if(idx != -1)	names.add(line.substring(idx + 21, line.length() - 3));
+						}
+					}
+				} br.close();
+			} catch(IOException e) {	e.printStackTrace();	}
+		}
+		// remove duplicates:
+		Set<String> cleanup = new HashSet<>();	cleanup.addAll(names);	names.clear();	names.addAll(cleanup);
+		
+		return names;
+	}
+	
 	public static void appendToFile(String path, String content) {
 		try {
 			FileOutputStream fos = new FileOutputStream(path, true);
@@ -83,7 +110,8 @@ public class ExtractPapers {
 		ntfiles.add(new Source("2006", new String[] {"c7169dfebde5497295f894d6f4a06e61", "519537007a8f221bc546afdf4d902ab1", "92f42d142a3ea2c666b2f6a414156278"}));
 		ntfiles.add(new Source("2002", new String[] {"ebd3a6767c7630330a58e62481897f34", "c49d2b70e92922b83af474e9ca529454", "6b461ac2dadea7381f21bb35df012b5d", "5f46d0824aca74226a059cecb075f753"}));
 		
-		File dir = new File("data/output");	dir.mkdir();
+		File dir = new File("data/output");	dir.mkdir();	ArrayList<String> contributions = new ArrayList<>();
+		String authornamespath = "data_sg/output/authornames.txt";
 		
 		for(Source nt : ntfiles) {
 			ArrayList<String> paperIDs = retrievePaperIDs(nt.sourceyear, nt.editions);	
@@ -92,10 +120,15 @@ public class ExtractPapers {
 				counter++;	System.out.println("\tProcessing Paper " + counter + "/" + size + " ...");
 				Paper paper = new Paper(p, nt.sourceyear);
 				String paperline = paper.paperID + "\t" + paper.title + "\t" + paper.year + "\t" + paper.doi;
-				for(String a : paper.authors)	paperline += "\t" + a;
+				for(String a : paper.authors)	{
+					paperline += "\t" + a;
+					if(!contributions.contains(a))	contributions.add(a);
+				}
 				paperline += "\n";
 				appendToFile("data/ouput/sgpapers.txt", paperline);
 			}
 		}
+		ArrayList<String> authornames = getAuthorNames(contributions, ntfiles);
+		for(String an : authornames)	appendToFile(authornamespath, an + "\n");
 	}
 }

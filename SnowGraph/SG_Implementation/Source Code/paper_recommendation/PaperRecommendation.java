@@ -113,12 +113,15 @@ public class PaperRecommendation {
 		for(String a : authors) {
 			ArrayList<Double[]> recommendations = new ArrayList<>();
 			Author author = authorslist.get(a);	ArrayList<String[]> simauthors = author.simauthors;
+			ArrayList<Integer> plist = author.papers;
 
 			// Get Papers of similar authors and maximum similarity value:
 			ArrayList<Integer> allpapers = new ArrayList<>();	double maximum = 0;
 			for(String[] sa : simauthors) {
 				Author atmp = authorslist.get(sa[0]);
-				for(int p : atmp.papers) {	if(!allpapers.contains(p))	allpapers.add(p);	}
+				for(int p : atmp.papers) {	
+					if((!allpapers.contains(p)) && (!plist.contains(p)))	allpapers.add(p);
+				}
 			
 				double weight = 0;
 				try { weight = Double.parseDouble(sa[1]); } catch(Exception e) {}
@@ -147,15 +150,6 @@ public class PaperRecommendation {
 				// Normalize and Store similarity value:
 				Double[] recom = new Double[2];	recom[0] = (double) pnr;	recom[1] = value / maximum;	
 				recommendations.add(recom);
-			}
-			
-			// Remove author's own papers from recommendations:
-			ArrayList<Double[]> rectmp = recommendations;	recommendations = new ArrayList<>();
-			ArrayList<Integer> plist = author.papers;
-			for(int i = 0; i < rectmp.size(); i++) {
-				boolean check = false;
-				for(int x : plist) 	if(x == rectmp.get(i)[0])	{	check = true; break;	}
-				if(!check)	recommendations.add(rectmp.get(i));
 			}
 
 			// Sort/Filter Recommendations:
